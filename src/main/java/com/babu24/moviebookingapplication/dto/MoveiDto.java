@@ -16,7 +16,6 @@ public class MoveiDto {
 
     private Integer movieId;
 
-
     @NotBlank(message = "please provide movie title")
     private String title;
 
