@@ -6,13 +6,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/movie")
@@ -32,10 +30,33 @@ public class MoveiController {
         return new ResponseEntity<>(movieService.addMovie(dto,file), HttpStatus.CREATED);
     }
 
+    @GetMapping("/{movieId}")
+    public ResponseEntity<MoveiDto> getMovieHandler(@PathVariable Integer movieId){
+        return ResponseEntity.ok(movieService
+                .getMovie(movieId)) ;
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<MoveiDto>> getMoviesHandler(){
+        return ResponseEntity.ok(movieService.getAllMovies()) ;
+    }
+
+
+
+
+
+
+
+
+
+
+
     // this method convert string to json
     private MoveiDto convertToMovieDto(String movieStoObj) throws JsonProcessingException {
 
         ObjectMapper objectMapper=new ObjectMapper();
        return objectMapper.readValue(movieStoObj,MoveiDto.class);
     }
+
+
 }

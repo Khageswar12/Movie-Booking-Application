@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -68,11 +69,48 @@ public class MoveiServiceImpl implements MovieService{
 
     @Override
     public MoveiDto getMovie(Integer movieId) {
-        return null;
+        // 1. check the data in db and if exits, fetch the data of given id
+        Movei movei= movieRepositry.findById(movieId).orElseThrow(()->
+                new RuntimeException("movie not found"));
+
+        // 2. generate posterUrl
+        String posterUrl= baseUrl + "/file/" + movei.getPoster();
+
+        // 3. map to movieDto object and return it
+        MoveiDto response= new MoveiDto(
+                movei.getMovieId(),
+                movei.getTitle(),
+                movei.getDirector(),
+                movei.getStudio(),
+                movei.getMovieCast(),
+                movei.getReleaseYear(),
+                movei.getPoster(),
+                posterUrl
+        );
+        return response;
     }
 
     @Override
     public List<MoveiDto> getAllMovies() {
-        return null;
+        // 1. fetch all data from DB
+        List<Movei> moveis=movieRepositry.findAll();
+          List<MoveiDto> moveiDtos=new ArrayList<>();
+        // 2. iterate through the list, generate posterUrl for each movie obj.
+          for(Movei movei:moveis){
+              String posterUrl= baseUrl + "/file/" + movei.getPoster();
+              MoveiDto response= new MoveiDto(
+                      movei.getMovieId(),
+                      movei.getTitle(),
+                      movei.getDirector(),
+                      movei.getStudio(),
+                      movei.getMovieCast(),
+                      movei.getReleaseYear(),
+                      movei.getPoster(),
+                      posterUrl
+              );
+              moveiDtos.add(response);
+          }
+        // 3. and map to movieDto obj
+        return moveiDtos;
     }
 }
