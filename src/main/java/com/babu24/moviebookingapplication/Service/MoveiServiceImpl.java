@@ -1,9 +1,16 @@
 package com.babu24.moviebookingapplication.Service;
 
 import com.babu24.moviebookingapplication.Entity.Movei;
+import com.babu24.moviebookingapplication.Exception.FileExitException;
+import com.babu24.moviebookingapplication.Exception.MovieNotFoundExpection;
 import com.babu24.moviebookingapplication.Repositry.MovieRepositry;
 import com.babu24.moviebookingapplication.dto.MoveiDto;
+import com.babu24.moviebookingapplication.dto.MoviePageResponce;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,7 +41,7 @@ public class MoveiServiceImpl implements MovieService{
     public MoveiDto addMovie(MoveiDto moveiDto, MultipartFile file) throws IOException {
         // 1. upload the file
         if(Files.exists(Paths.get(path + File.separator +file.getOriginalFilename()))){
-            throw new RuntimeException("file already exits ! please enter another file name");
+            throw new FileExitException("file already exits ! please enter another file name");
         }
        String uploadFileName= fileService.uploadFile(path,file);
 
@@ -77,7 +84,7 @@ public class MoveiServiceImpl implements MovieService{
     public MoveiDto getMovie(Integer movieId) {
         // 1. check the data in db and if exits, fetch the data of given id
         Movei movei= movieRepositry.findById(movieId).orElseThrow(()->
-                new RuntimeException("movie not found"));
+                new MovieNotFoundExpection("movie not found with id"+movieId));
 
         // 2. generate posterUrl
         String posterUrl= baseUrl + "/file/" + movei.getPoster();
@@ -100,6 +107,7 @@ public class MoveiServiceImpl implements MovieService{
     public List<MoveiDto> getAllMovies() {
         // 1. fetch all data from DB
         List<Movei> moveis=movieRepositry.findAll();
+
           List<MoveiDto> moveiDtos=new ArrayList<>();
         // 2. iterate through the list, generate posterUrl for each movie obj.
           for(Movei movei:moveis){
@@ -125,7 +133,7 @@ public class MoveiServiceImpl implements MovieService{
 
      // 1. check if movie object with given id
         Movei mv= movieRepositry.findById(movieId).orElseThrow(()->
-                new RuntimeException("movie not found"));
+                new MovieNotFoundExpection("movie not found"));
      // 2. if the file is null,do nothing &   if file is not null
 
         String fileName=mv.getPoster();
@@ -171,7 +179,7 @@ public class MoveiServiceImpl implements MovieService{
 
         // 1. check if movie object exit in db
         Movei mv= movieRepositry.findById(movieId).orElseThrow(()->
-                new RuntimeException("movie not found"));
+                new MovieNotFoundExpection("movie not found"));
         Integer id=mv.getMovieId();
 
         // 2. delete the file associated with this object
@@ -181,4 +189,75 @@ public class MoveiServiceImpl implements MovieService{
         movieRepositry.delete(mv);
         return "Movie deleted with id = "+id;
     }
+
+    @Override
+    public MoviePageResponce getAllMoviesWithPagination(Integer pageNumber, Integer pageSize) {
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        Page<Movei> moveiPages = movieRepositry.findAll(pageable);
+        List<Movei> moveis = moveiPages.getContent();
+        
+
+        List<MoveiDto> moveiDtos=new ArrayList<>();
+        // 2. iterate through the list, generate posterUrl for each movie obj.
+        for(Movei movei:moveis){
+            String posterUrl= baseUrl + "/file/" + movei.getPoster();
+            MoveiDto response= new MoveiDto(
+                    movei.getMovieId(),
+                    movei.getTitle(),
+                    movei.getDirector(),
+                    movei.getStudio(),
+                    movei.getMovieCast(),
+                    movei.getReleaseYear(),
+                    movei.getPoster(),
+                    posterUrl
+            );
+            moveiDtos.add(response);
+        }
+
+      return new MoviePageResponce(
+              moveiDtos,pageNumber,pageSize,
+              moveiPages.getTotalElements(),
+              moveiPages.getTotalPages(),
+              moveiPages.isLast()
+      );
+    }
+
+
+    @Override
+        public MoviePageResponce getAllMoviesWithPaginationAndSorting (Integer pageNumber,
+                Integer pageSize, String sortBy, String dir){
+
+        Sort sort=dir.equalsIgnoreCase("asc") ?
+                Sort.by(sortBy).ascending():Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize,sort);
+        Page<Movei> moveiPages = movieRepositry.findAll(pageable);
+        List<Movei> moveis = moveiPages.getContent();
+
+
+        List<MoveiDto> moveiDtos=new ArrayList<>();
+        // 2. iterate through the list, generate posterUrl for each movie obj.
+        for(Movei movei:moveis){
+            String posterUrl= baseUrl + "/file/" + movei.getPoster();
+            MoveiDto response= new MoveiDto(
+                    movei.getMovieId(),
+                    movei.getTitle(),
+                    movei.getDirector(),
+                    movei.getStudio(),
+                    movei.getMovieCast(),
+                    movei.getReleaseYear(),
+                    movei.getPoster(),
+                    posterUrl
+            );
+            moveiDtos.add(response);
+        }
+
+        return new MoviePageResponce(
+                moveiDtos,pageNumber,pageSize,
+                moveiPages.getTotalElements(),
+                moveiPages.getTotalPages(),
+                moveiPages.isLast()
+        );
+    }
+
+    
 }

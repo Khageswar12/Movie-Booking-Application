@@ -1,7 +1,10 @@
 package com.babu24.moviebookingapplication.Controller;
 
+import com.babu24.moviebookingapplication.Exception.EmptyFileException;
 import com.babu24.moviebookingapplication.Service.MovieService;
+import com.babu24.moviebookingapplication.Utils.AppConstances;
 import com.babu24.moviebookingapplication.dto.MoveiDto;
+import com.babu24.moviebookingapplication.dto.MoviePageResponce;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
@@ -24,8 +27,12 @@ public class MoveiController {
 
     @PostMapping("/add-movie")
     public ResponseEntity<MoveiDto> addMovieHandler(
-            @RequestPart MultipartFile file,@RequestPart String movieData) throws IOException {
+            @RequestPart MultipartFile file,@RequestPart String movieData) throws IOException, EmptyFileException {
 
+        if(file.isEmpty()){
+            throw new EmptyFileException("file is empty " +
+                    " please send another file");
+        }
         MoveiDto dto=convertToMovieDto(movieData);
         return new ResponseEntity<>(movieService.addMovie(dto,file), HttpStatus.CREATED);
     }
@@ -52,6 +59,26 @@ public class MoveiController {
     @DeleteMapping("/delete/{movieId}")
     public ResponseEntity<String>deleteMovieHandler(@PathVariable Integer movieId) throws IOException {
         return ResponseEntity.ok(movieService.deleteMovie(movieId));
+    }
+
+    @GetMapping("/allMoviespage")
+    public ResponseEntity<MoviePageResponce> getMoviesWithPagination(
+            @RequestParam(defaultValue = AppConstances.PAGE_NUMBER,required = false)Integer pageNumber,
+            @RequestParam(defaultValue = AppConstances.PAGE_SIZE,required = false)Integer pageSize
+    ){
+        return ResponseEntity.ok(movieService.getAllMoviesWithPagination(pageNumber,pageSize));
+
+    }
+
+    @GetMapping("/allMoviespageSort")
+    public ResponseEntity<MoviePageResponce> getMoviesWithPaginationAndSorting(
+            @RequestParam(defaultValue = AppConstances.PAGE_NUMBER,required = false)Integer pageNumber,
+            @RequestParam(defaultValue = AppConstances.PAGE_SIZE,required = false)Integer pageSize,
+            @RequestParam(defaultValue = AppConstances.SORT_BY,required = false)String sortBy,
+            @RequestParam(defaultValue = AppConstances.SORT_DIR,required = false)String dir
+    ){
+        return ResponseEntity.ok(movieService.getAllMoviesWithPaginationAndSorting(pageNumber,pageSize,sortBy,dir));
+
     }
 
 
